@@ -51,6 +51,8 @@ class ThumbnailManager {
                     storeThumb(file, it.thumbnail)
                     cb(it.thumbnail)
                 }
+            else
+                null
         } ?:
         // Then generate thumb
         run {

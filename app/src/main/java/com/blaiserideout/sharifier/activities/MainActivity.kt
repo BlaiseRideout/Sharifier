@@ -310,7 +310,7 @@ class MainActivity : AppCompatActivity() {
 
     //endregion
 
-
+    // Call off the main thread since this function uses the database
     @SuppressLint("NotifyDataSetChanged")
     private fun populateList() {
         // If we have the right number of files, don't need to repopulate list (probably)
@@ -319,6 +319,18 @@ class MainActivity : AppCompatActivity() {
 
         val oldFiles = files
         files = db.filesDao().getFilesWithSentFriends()
+
+        // Remove deleted files from the database in a separate thread
+        // TODO: Find a cleaner/more efficient/less intrusive way to do this
+        Thread {
+            files?.filter { file -> !File(file.file.path).exists() }
+                ?.let { filesToDelete ->
+                    if (filesToDelete.isNotEmpty()) {
+                        db.filesDao().deleteAll(filesToDelete.map { it.file })
+                        populateList()
+                    }
+                }
+        }.start()
 
         runOnUiThread {
             if (oldFiles != null &&

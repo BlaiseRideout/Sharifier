@@ -42,6 +42,9 @@ interface FilesDao {
     @Delete
     fun delete(file: FileItem)
 
+    @Delete
+    fun deleteAll(file: List<FileItem>)
+
     @Query("DELETE FROM FileItem")
     fun reset()
 }
