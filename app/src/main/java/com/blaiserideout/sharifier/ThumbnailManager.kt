@@ -46,10 +46,11 @@ class ThumbnailManager {
         thumbCache.get(file.path)?.let(cb) ?:
         // Then check in database cache
         file.fileId?.let { fileId ->
-            db.thumbsDao().getThumbnailFor(fileId)?.let {
-                storeThumb(file, it.thumbnail)
-                cb(it.thumbnail)
-            }
+            if (!canceled.isCanceled)
+                db.thumbsDao().getThumbnailFor(fileId)?.let {
+                    storeThumb(file, it.thumbnail)
+                    cb(it.thumbnail)
+                }
         } ?:
         // Then generate thumb
         run {

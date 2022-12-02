@@ -177,8 +177,8 @@ class FileItemAdapter(
         // Each holder manages its own thread pool so we can target only one
         // thumbnail thread per holder
         private val threadPool = ThreadPoolExecutor(
+            1,
             NUMBER_OF_CORES,
-            NUMBER_OF_CORES * 2,
             100,
             TimeUnit.MILLISECONDS,
             taskQueue

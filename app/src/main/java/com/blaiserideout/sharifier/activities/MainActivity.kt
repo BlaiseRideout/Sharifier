@@ -120,56 +120,49 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Callback guaranteed to run on the main UI thread
     private fun markSelectedFilesAsSent(cb: (() -> Unit)? = null) {
-        Thread {
+        currentFriend?.friendId?.let { currentFriendId ->
             adapter.selectedItems.forEach {
                 val selectedFile = files!![it]
-                currentFriend?.friendId?.let { currentFriendId ->
-                    if (!selectedFile.friends.contains(currentFriend)) {
-                        selectedFile.friends.add(currentFriend!!)
-                        selectedFile.file.fileId?.let { fileId ->
+                if (!selectedFile.friends.contains(currentFriend)) {
+                    selectedFile.friends.add(currentFriend!!)
+                    selectedFile.file.fileId?.let { fileId ->
+                        Thread {
                             db.filesDao().sentFile(
                                 SentItemsCrossRef(
                                     fileId,
                                     currentFriendId
                                 )
                             )
-                        }
+                        }.start()
                     }
                 }
-
-                runOnUiThread {
-                    cb?.invoke()
-                    updateVisibleItems()
-                }
             }
-        }.start()
+
+            cb?.invoke()
+            updateVisibleItems()
+        }
     }
 
-    // Callback guaranteed to run on the main UI thread
     private fun unsendSelectedFiles(cb: (() -> Unit)? = null) {
         currentFriend?.friendId?.let { currentFriendId ->
-            Thread {
-                adapter.selectedItems.forEach {
-                    val selectedFile = files!![it]
-                    selectedFile.friends.remove(currentFriend!!)
-                    selectedFile.file.fileId?.let { fileId ->
+            adapter.selectedItems.forEach {
+                val selectedFile = files!![it]
+                selectedFile.friends.remove(currentFriend!!)
+                selectedFile.file.fileId?.let { fileId ->
+                    Thread {
                         db.filesDao().unsendFile(
                             SentItemsCrossRef(
                                 fileId,
                                 currentFriendId
                             )
                         )
-                    }
+                    }.start()
                 }
+            }
 
-                runOnUiThread {
-                    cb?.invoke()
-                    updateVisibleItems()
-                }
-
-            }.start()
+            cb?.invoke()
+            updateVisibleItems()
         }
     }
 
