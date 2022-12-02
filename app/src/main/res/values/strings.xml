@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Sharifier</string>
+    <string name="clear_selection">Clear Selection</string>
+    <string name="unsend_selection">Unsend Selection</string>
+    <string name="mark_selection_sent">Mark Selection As Sent</string>
+    <string name="add_friend">Add Friend</string>
+</resources>
