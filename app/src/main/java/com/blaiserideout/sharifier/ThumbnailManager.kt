@@ -35,14 +35,36 @@ class ThumbnailManager {
         file.fileId?.let { fileId -> db.thumbsDao().insert(Thumbnail(fileId, thumb)) }
     }
 
+    fun generateThumb(
+        file: FileItem,
+        size: Size,
+        canceled: CancellationSignal,
+        cb: (bitmap: Bitmap) -> Unit
+    ) {
+        Util.runOnThread {
+            (if (Util.matchesMimeType("image/*", file.path))
+                ThumbnailUtils.createImageThumbnail(
+                    File(file.path),
+                    size,
+                    canceled
+                )
+            else if (Util.matchesMimeType("video/*", file.path))
+                ThumbnailUtils.createVideoThumbnail(
+                    File(file.path),
+                    size,
+                    canceled
+                )
+            else null)?.let(cb)
+        }
+    }
+
     // Callback is called with resulting thumbnail bitmap if the operation wasn't canceled
     fun getThumb(
         file: FileItem,
         size: Size,
         canceled: CancellationSignal,
         cb: (bitmap: Bitmap) -> Unit
-    ) {
-        // Check in memory cache
+    ) = // Check in memory cache
         thumbCache.get(file.path)?.let(cb) ?:
         // Then check in database cache
         file.fileId?.let { fileId ->
@@ -58,19 +80,11 @@ class ThumbnailManager {
         run {
             // Otherwise, generate the thumb on a separate thread
             try {
-                (if (Util.matchesMimeType("image/*", file.path))
-                    ThumbnailUtils.createImageThumbnail(
-                        File(file.path),
-                        size,
-                        canceled
-                    )
-                else if (Util.matchesMimeType("video/*", file.path))
-                    ThumbnailUtils.createVideoThumbnail(
-                        File(file.path),
-                        size,
-                        canceled
-                    )
-                else null)?.let { thumb: Bitmap ->
+                generateThumb(
+                    file,
+                    size,
+                    canceled,
+                ) { thumb: Bitmap ->
                     storeThumb(file, thumb)
                     cb(thumb)
                 }
@@ -81,6 +95,5 @@ class ThumbnailManager {
                 Util.warn("Failed to generate thumbnail for \"${file.path}\": $e")
             }
         }
-    }
 
 }

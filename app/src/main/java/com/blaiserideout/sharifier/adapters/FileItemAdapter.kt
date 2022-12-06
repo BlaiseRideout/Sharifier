@@ -1,9 +1,9 @@
 package com.blaiserideout.sharifier.adapters
 
+import android.annotation.SuppressLint
 import android.app.ActionBar.LayoutParams
 import android.app.Activity
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +13,7 @@ import android.os.CancellationSignal
 import android.view.Gravity
 import android.widget.CheckBox
 import android.widget.PopupWindow
+import android.widget.VideoView
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.recyclerview.widget.RecyclerView
 import com.blaiserideout.sharifier.FileWithSentFriends
@@ -22,7 +23,7 @@ import java.util.concurrent.*
 import com.blaiserideout.sharifier.SingletonState.files
 import com.blaiserideout.sharifier.SingletonState.currentFriend
 import com.blaiserideout.sharifier.ThumbnailManager
-import kotlin.properties.Delegates
+import com.blaiserideout.sharifier.Util
 
 class FileItemAdapter(
     private val activity: Activity,
@@ -85,6 +86,7 @@ class FileItemAdapter(
             expandButton.setOnClickListener(::expandImagePreview)
         }
 
+        @SuppressLint("ClickableViewAccessibility")
         private fun expandImagePreview(view: View) {
             //
             val popupView = LayoutInflater.from(view.context).inflate(
@@ -101,49 +103,42 @@ class FileItemAdapter(
                 popupWindow.dismiss()
             popupWindow.showAtLocation(activity.window.decorView.rootView, Gravity.CENTER, 0, 0)
             val previewImageView: ImageView = popupView.findViewById(R.id.preview_image_view)
+            val previewVideoView: VideoView = popupView.findViewById(R.id.preview_video_view);
+            val canceled = CancellationSignal();
             item?.file?.let { file ->
-                // Get width and height
-                val originalBitmap = BitmapFactory.decodeFile(file.path)
-
-                val origWidth = originalBitmap.width
-                val origHeight = originalBitmap.height
-                val screenWidth = activity.window.decorView.rootView.measuredWidth
-                val screenHeight = activity.window.decorView.rootView.measuredHeight
-
-                // If the image is big enough we need to scale it
-                if (origWidth > screenWidth * 2 || origHeight > screenHeight * 2) {
-                    var scaledWidth by Delegates.notNull<Int>()
-                    var scaledHeight by Delegates.notNull<Int>()
-
-                    val imageAspect = origWidth.toFloat() / origHeight.toFloat()
-                    val screenAspect = screenWidth.toFloat() / screenHeight.toFloat()
-                    if (imageAspect > screenAspect) {
-                        // Image is wider than the screen aspect, scale to width
-                        scaledWidth = screenWidth
-                        scaledHeight = (screenWidth / imageAspect).toInt()
-                    } else {
-                        // Image is taller than screen aspect, scale to height
-                        scaledHeight = screenHeight
-                        scaledWidth = (screenHeight * imageAspect).toInt()
+                if (Util.matchesMimeType("video/*", file.path)) {
+                    if (!canceled.isCanceled) {
+                        previewVideoView.setVideoPath(file.path);
+                        previewVideoView.start();
+                        previewVideoView.visibility = View.VISIBLE;
+                        previewImageView.visibility = View.INVISIBLE;
                     }
-
-                    previewImageView.setImageBitmap(
-                        Bitmap.createScaledBitmap(
-                            originalBitmap,
-                            scaledWidth,
-                            scaledHeight,
-                            true
-                        )
-                    )
                 } else {
-                    previewImageView.setImageBitmap(originalBitmap)
-                }
+                    val screenWidth = activity.window.decorView.rootView.measuredWidth
+                    val screenHeight = activity.window.decorView.rootView.measuredHeight
+                    val screenSize = Size(screenWidth, screenHeight);
 
+                    thumbnailManager.generateThumb(
+                        file,
+                        screenSize,
+                        canceled,
+                    ) { previewImg: Bitmap ->
+                        activity.runOnUiThread {
+                            previewImageView.setImageBitmap(previewImg)
+                        }
+                    }
+                }
+            }
+            popupWindow.setOnDismissListener {
+                canceled.cancel()
             }
             previewImageView.setOnClickListener {
                 popupWindow.dismiss()
             }
-
+            previewVideoView.setOnTouchListener { _, _ ->
+                popupWindow.dismiss()
+                true
+            }
         }
 
         fun bind(item_: FileWithSentFriends) {

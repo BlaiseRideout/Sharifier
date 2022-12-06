@@ -1,6 +1,7 @@
 package com.blaiserideout.sharifier
 
 import android.net.Uri
+import android.os.Looper
 import android.util.Log
 import androidx.core.content.FileProvider
 import com.blaiserideout.sharifier.SingletonState.activity
@@ -17,6 +18,15 @@ class Util {
 
         fun warn(msg: String) {
             Log.w(LOG_TAG, msg)
+        }
+
+        // If called from the main thread, spawns the runnable on its own thread
+        // Otherwise, runs on the calling thread
+        fun runOnThread(cb: Runnable) {
+            if(Looper.myLooper() == Looper.getMainLooper())
+                Thread(cb).start()
+            else
+                cb.run()
         }
 
         private fun getPublicUri(path: String): Uri = activity.get()!!.let { activity ->
