@@ -215,6 +215,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun switchFriend(friend: Friend) {
         currentFriend = friend
+        updateTitle()
         updateVisibleItems()
         Thread {
             friend.friendId?.let { friendId ->
