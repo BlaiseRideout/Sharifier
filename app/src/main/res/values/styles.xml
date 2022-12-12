@@ -1,7 +1,0 @@
-<resources>
-
-    <style name="Widget.Theme.Sharifier.MyView" parent="">
-        <item name="android:background">@color/orange_1</item>
-        <item name="titleTextAppearance">@style/TextAppearance.AppCompat.Widget.ActionBar.Title</item>
-    </style>
-</resources>
