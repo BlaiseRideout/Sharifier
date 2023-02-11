@@ -29,16 +29,35 @@ class FileItemAdapter(
     private val activity: Activity,
     private var itemSelectionChanged: () -> Unit
 ) : RecyclerView.Adapter<FileItemAdapter.ViewHolder>() {
-    val selectedItems = mutableSetOf<Int>()
+    var selectedItems = mutableSetOf<Int>()
 
     val thumbnailManager = ThumbnailManager()
 
+    private var previousSelectedItems: MutableSet<Int>? = null;
+
     // Only call from the main UI thread
-    fun clearSelection() {
-        val changedItems = selectedItems.toList()
-        selectedItems.clear()
+    fun restorePreviousSelection() {
+        previousSelectedItems?.toMutableSet()?.let{ prevSelection ->
+            setSelection(prevSelection)
+        }
+    }
+
+    // Only call from the main UI thread
+    // Takes ownernship of object passed to newSelection
+    private fun setSelection(newSelection: MutableSet<Int>) {
+        if (selectedItems.isNotEmpty())
+            previousSelectedItems = selectedItems
+        val changedItems = newSelection union selectedItems
+        selectedItems = newSelection
         changedItems.forEach(::notifyItemChanged)
         itemSelectionChanged()
+    }
+
+    // Only call from the main UI thread
+    fun clearSelection(clearPrevious: Boolean = false) {
+        setSelection(mutableSetOf<Int>())
+        if(clearPrevious)
+            previousSelectedItems = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

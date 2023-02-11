@@ -299,6 +299,7 @@ class MainActivity : AppCompatActivity() {
             R.id.clear_selection -> adapter.clearSelection()
             R.id.unsend_selection -> unsendSelectedFiles()
             R.id.mark_selection_sent -> markSelectedFilesAsSent()
+            R.id.restore_previous_selection -> adapter.restorePreviousSelection()
         }
         return true
     }
@@ -340,7 +341,7 @@ class MainActivity : AppCompatActivity() {
             ) {
                 // Adding items anywhere but the end of the list invalidates indices;
                 // need to regenerate the whole list view
-                adapter.clearSelection()
+                adapter.clearSelection(clearPrevious = true)
                 adapter.notifyDataSetChanged()
             } else {
                 val previousLength = oldFiles?.size ?: 0

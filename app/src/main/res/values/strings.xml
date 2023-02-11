@@ -3,5 +3,6 @@
     <string name="clear_selection">Clear Selection</string>
     <string name="unsend_selection">Unsend Selection</string>
     <string name="mark_selection_sent">Mark Selection As Sent</string>
+    <string name="restore_previous_selection">Restore Previous Selection</string>
     <string name="add_friend">Add Friend</string>
 </resources>
