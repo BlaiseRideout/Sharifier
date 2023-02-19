@@ -36,7 +36,7 @@ interface FilesDao {
     @Query("SELECT modified FROM FileItem ORDER BY modified DESC LIMIT 1")
     fun getLatest(): Instant?
 
-    @Insert
+    @Insert(onConflict=OnConflictStrategy.IGNORE)
     fun insertAll(files: List<FileItem>)
 
     @Delete
