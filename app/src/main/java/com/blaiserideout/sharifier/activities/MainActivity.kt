@@ -325,13 +325,17 @@ class MainActivity : AppCompatActivity() {
         // Remove deleted files from the database in a separate thread
         // TODO: Find a cleaner/more efficient/less intrusive way to do this
         Thread {
-            files?.filter { file -> !File(file.file.path).exists() }
-                ?.let { filesToDelete ->
-                    if (filesToDelete.isNotEmpty()) {
-                        db.filesDao().deleteAll(filesToDelete.map { it.file })
-                        populateList()
+            // Scan files in chunks to speed this up since deleted files are usually going to
+            // be at the start so we shouldn't have to wait until we've scanned every file
+            files?.chunked(RECENTS_CHUNK_SIZE)?.forEach { filesChunk ->
+                filesChunk.filter { file -> !File(file.file.path).exists() }
+                    ?.let { filesToDelete ->
+                        if (filesToDelete.isNotEmpty()) {
+                            db.filesDao().deleteAll(filesToDelete.map { it.file })
+                            populateList()
+                        }
                     }
-                }
+            }
         }.start()
 
         runOnUiThread {
